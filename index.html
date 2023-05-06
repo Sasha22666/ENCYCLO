@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Энциклопедия</title>
+</head>
+
+<body>
+  <script src='http://fe.it-academy.by/JQ/jquery.js'></script>
+    <style>
+      #Page1 {text-decoration:underline;
+      cursor: pointer;
+    display: block};
+
+      #Zagolovok {
+        text-align: center;
+      }
+
+     
+    </style>
+    
+<!-- <h2>ОДНОСТРАНИЧНОЕ ПРИЛОЖЕНИЕ</h2> -->
+
+<div id='IPage'>
+</div>
+
+
+<script>
+
+  "use strict";
+
+  function errorHandler(jqXHR, statusStr, errorStr) {
+      alert(statusStr + ' ' + errorStr);
+    }
+
+  // в закладке УРЛа будем хранить разделённые подчёркиваниями слова
+  // #Main - главная
+  // #Photo_55 - отобразить фото 55
+  // #About - о нас
+
+  // отслеживаем изменение закладки в УРЛе
+  // оно происходит при любом виде навигации
+  // в т.ч. при нажатии кнопок браузера ВПЕРЁД/НАЗАД
+  window.onhashchange=switchToStateFromURLHash;
+
+  // текущее состояние приложения
+  // это Model из MVC
+  var SPAState={};
+
+  // фотографии, которые можно просмотреть
+  var articles=[
+  {"name":"А","value":["Армия","Аттракцион"]},
+  {"name":"Б","value":["Батон","Битва"]},
+  {"name":"В","value":["Вишня","Внимание"]},
+  {"name":"Г","value":["Гриб"]},
+  {"name":"Д","value":["Дача","Дом"]}
+]
+;
+
+  // вызывается при изменении закладки УРЛа
+  // а также при первом открытии страницы
+  // читает новое состояние приложения из закладки УРЛа
+  // и обновляет ВСЮ вариабельную часть веб-страницы
+  // соответственно этому состоянию
+  // это упрощённая реализация РОУТИНГА - автоматического выполнения нужных
+  // частей кода в зависимости от формы URLа
+  // "роутинг" и есть "контроллер" из MVC - управление приложением через URL
+  function switchToStateFromURLHash() {
+    var URLHash=window.location.hash;
+
+    // убираем из закладки УРЛа решётку
+    // (по-хорошему надо ещё убирать восклицательный знак, если есть)
+    var stateStr=URLHash.substr(1);
+
+    if ( stateStr!="" ) { // если закладка непустая, читаем из неё состояние и отображаем
+      var parts=stateStr.split("_")
+      SPAState={ pagename: parts[0] }; // первая часть закладки - номер страницы
+      // if ( SPAState.pagename=='Article' )
+      //   SPAState.articleid=parts[1]; // для фото нужна ещё вторая часть закладки - номер статьи
+    }
+    else
+      SPAState={pagename:'Main'}; // иначе показываем главную страницу
+
+    console.log('Новое состояние приложения:');
+    console.log(SPAState);
+
+    // обновляем вариабельную часть страницы под текущее состояние
+    // это реализация View из MVC - отображение состояния модели в HTML-код
+    var pageHTML="";
+    switch ( SPAState.pagename ) {
+      case 'Main':
+        pageHTML+="<h1 align=center>Энцилопедия</h1>";
+        pageHTML+="<span id=Page1 onclick='switchToArticles()'>список статей здесь</span>  ";
+        break;
+      case 'Articles':
+        // var article=articles[SPAState.aticleid];
+        pageHTML+="<h1 align=center>Оглавление</h1>";
+         for (let i=0; i<articles.length; i++) {
+          pageHTML+='<h3>'+articles[i]["name"]+'</h3>';
+          for (let j=0;j<articles[i]['value'].length;j++) {
+            pageHTML+='<span id=Page1 onclick="switchPoSpisku()">'+articles[i]["value"][j]+'</span>';
+            }
+        };
+        break;
+      case 'Article':
+       
+        for (let i=0; i<articles.length; i++) {
+          for (let j=0;j<articles[i]['value'].length;j++) {
+            pageHTML+='<span id=Page1 onclick="switchPoSpisku()">'+articles[i]["value"][j]+'</span>';
+                     
+            }
+            
+            $.ajax("http://fe.it-academy.by/Examples/test.html",
+            { type: 'GET', dataType: 'html', success: dataLoaded, error: errorHandler }
+          );
+
+          function dataLoaded(data) {
+
+            var divArt = document.createElement('div');
+            divArt.style.position = 'absolute';
+            divArt.style.left = '105px'
+            divArt.style.top = '0px';
+            document.body.appendChild(divArt);
+            divArt.innerHTML = data;
+
+          }
+        };
+          
+        break;
+    }
+   
+    document.getElementById('IPage').innerHTML=pageHTML;
+   
+
+  }
+
+  // устанавливает в закладке УРЛа новое состояние приложения
+  // и затем устанавливает+отображает это состояние
+  function switchToState(newState) {
+    // устанавливаем закладку УРЛа
+    // нужно для правильной работы кнопок навигации браузера
+    // (т.к. записывается новый элемент истории просмотренных страниц)
+    // и для возможности передачи УРЛа другим лицам
+    var stateStr=newState.pagename;
+    // if ( newState.pagename=='Article' )
+    //   stateStr+="_"+newState.articleid;
+    location.hash=stateStr;
+
+    // АВТОМАТИЧЕСКИ вызовется switchToStateFromURLHash()
+    // т.к. закладка УРЛа изменилась (ЕСЛИ она действительно изменилась)
+  }
+
+  // function switchToMainPage() {
+  //   switchToState( { pagename:'Main'}) ;
+  // }
+
+  function switchToArticles() {
+    // alert("готово1") ;
+    switchToState( { pagename:'Articles'} );
+  }
+
+  function switchPoSpisku() {
+    // alert("готово2") ;
+    switchToState( { pagename:'Article' } );
+  }
+
+  // переключаемся в состояние, которое сейчас прописано в закладке УРЛ
+  switchToStateFromURLHash();
+
+</script>
+
+</body>
+
+</html>
